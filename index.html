@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>دفتر الورش</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1c1d1b">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="دفتر الورش">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@500;700;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    box-sizing:border-box;
+    --bg:#dcdcd4;
+    --paper:#f7f6f2;
+    --card:#ffffff;
+    --ink:#1c1d1b;
+    --ink-soft:#5b5c57;
+    --line:#c7c6bd;
+    --rebar:#d5511e;
+    --rebar-dark:#a83e14;
+    --blueprint:#2b4c7e;
+    --blueprint-dark:#1e3557;
+    --ok:#3a7d44;
+    --ok-bg:#e6f0e4;
+    --bad:#b23a2e;
+    --bad-bg:#f6e5e2;
+    --radius:4px;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    background-image:
+      linear-gradient(var(--bg) 1px, transparent 1px),
+      linear-gradient(90deg, var(--bg) 1px, transparent 1px);
+    color:var(--ink);
+    font-family:'IBM Plex Sans Arabic', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.num-face{ font-family:'Tajawal','IBM Plex Sans Arabic',sans-serif; }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1b1c1a; --paper:#242522; --card:#2c2d29; --ink:#efeee7; --ink-soft:#a6a59b;
+      --line:#44453f; --ok-bg:#20301f; --bad-bg:#3a201c;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1b1c1a; --paper:#242522; --card:#2c2d29; --ink:#efeee7; --ink-soft:#a6a59b;
+    --line:#44453f; --ok-bg:#20301f; --bad-bg:#3a201c;
+  }
+
+  #app{ max-width:640px; margin:0 auto; min-height:100%; background:var(--paper); }
+
+  header.top{
+    background:var(--ink);
+    color:var(--paper);
+    padding:18px 18px 16px;
+    position:sticky; top:0; z-index:5;
+    padding-top:calc(18px + env(safe-area-inset-top,0px));
+    border-bottom:4px solid var(--rebar);
+  }
+  header.top .row{ display:flex; align-items:center; gap:10px; }
+  header.top h1{ margin:0; font-size:20px; font-weight:900; letter-spacing:.3px; }
+  header.top .sub{ margin:2px 0 0; font-size:12.5px; color:#c9c8bf; }
+  .backbtn{
+    background:transparent; border:1.5px solid #5c5d55; color:var(--paper);
+    border-radius:var(--radius); padding:7px 10px; font-size:14px; cursor:pointer;
+    font-family:inherit;
+  }
+  .backbtn:active{ background:#3a3b36; }
+
+  main{ padding:16px 16px 40px; }
+
+  .stats-strip{
+    display:flex; flex-direction:column; gap:8px; margin-bottom:18px;
+  }
+  .stats-strip .count-row{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:10px 12px; text-align:center; font-size:13px; color:var(--ink-soft);
+  }
+  .stats-strip .count-row b{ color:var(--ink); font-family:'Tajawal',sans-serif; font-size:15px; }
+  .cur-table{
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    overflow:hidden;
+  }
+  .cur-table .cur-row{
+    display:grid; grid-template-columns:1.1fr 1fr 1fr 1fr; align-items:center;
+    padding:9px 12px; border-bottom:1px solid var(--line); font-size:12.5px;
+  }
+  .cur-table .cur-row:last-child{ border-bottom:none; }
+  .cur-table .cur-row.head{ background:var(--paper); color:var(--ink-soft); font-size:11px; }
+  .cur-table .cur-code{ font-weight:700; font-family:'Tajawal',sans-serif; }
+  .cur-table .v-in{ color:var(--ok); font-weight:600; }
+  .cur-table .v-out{ color:var(--bad); font-weight:600; }
+  .cur-table .v-bal{ font-weight:700; }
+
+  .section-title{
+    display:flex; align-items:center; justify-content:space-between;
+    margin:22px 0 10px;
+  }
+  .section-title h2{ font-size:15px; margin:0; font-weight:700; }
+
+  .plate{
+    position:relative;
+    background:var(--card);
+    border:2px solid var(--ink);
+    border-radius:6px;
+    padding:14px 16px;
+    margin-bottom:12px;
+    cursor:pointer;
+    transition:transform .12s ease;
+  }
+  .plate:active{ transform:scale(.985); }
+  .plate .rivT1, .plate .rivT2, .plate .rivB1, .plate .rivB2{
+    position:absolute; width:7px; height:7px; border-radius:50%;
+    background:var(--ink-soft);
+  }
+  .plate .rivT1{ top:8px; right:8px; } .plate .rivT2{ top:8px; left:8px; }
+  .plate .rivB1{ bottom:8px; right:8px; } .plate .rivB2{ bottom:8px; left:8px; }
+  .plate-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin:0 10px; }
+  .plate-name{ font-size:17px; font-weight:900; font-family:'Tajawal',sans-serif; }
+  .plate-client{ font-size:12.5px; color:var(--ink-soft); margin-top:2px; }
+  .status-chip{
+    font-size:11px; padding:3px 9px; border-radius:20px; white-space:nowrap; font-weight:600;
+    border:1px solid currentColor;
+  }
+  .status-جارية{ color:var(--blueprint); }
+  .status-متوقفة{ color:var(--ink-soft); }
+  .status-منتهية{ color:var(--ok); }
+
+  .plate-cur{ margin:12px 10px 2px; border-top:1px dashed var(--line); padding-top:10px; }
+  .plate-cur .cur-line{ display:flex; justify-content:space-between; font-size:12.5px; padding:3px 0; }
+  .plate-cur .cur-line .code{ color:var(--ink-soft); font-weight:600; }
+  .plate-cur .cur-line .figs span{ margin-inline-start:10px; }
+  .balance-pos{ color:var(--ok); }
+  .balance-neg{ color:var(--bad); }
+
+  .empty{
+    text-align:center; padding:34px 12px; color:var(--ink-soft); font-size:13.5px;
+    border:1.5px dashed var(--line); border-radius:6px;
+  }
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    border:none; border-radius:var(--radius); padding:11px 16px; font-size:14.5px;
+    font-weight:600; cursor:pointer; font-family:inherit;
+  }
+  .btn-primary{ background:var(--rebar); color:#fff; }
+  .btn-primary:active{ background:var(--rebar-dark); }
+  .btn-blue{ background:var(--blueprint); color:#fff; }
+  .btn-blue:active{ background:var(--blueprint-dark); }
+  .btn-ghost{ background:transparent; border:1.5px solid var(--line); color:var(--ink); }
+  .btn-block{ width:100%; }
+  .btn-danger-text{ background:none; border:none; color:var(--bad); font-size:12.5px; cursor:pointer; padding:4px 6px; font-family:inherit; }
+
+  .fab-add{
+    position:fixed; bottom:22px; left:50%; transform:translateX(-50%);
+    max-width:608px; width:calc(100% - 32px);
+    bottom:calc(22px + env(safe-area-inset-bottom,0px));
+  }
+
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:6px; padding:16px;
+    margin-bottom:14px;
+  }
+  .field{ margin-bottom:12px; }
+  .field label{ display:block; font-size:12.5px; color:var(--ink-soft); margin-bottom:5px; }
+  .field input, .field select, .field textarea{
+    width:100%; padding:10px 12px; border:1.5px solid var(--line); border-radius:var(--radius);
+    font-size:15px; font-family:inherit; background:var(--paper); color:var(--ink);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{ outline:2px solid var(--blueprint); outline-offset:1px; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .cur-toggle{ display:flex; gap:8px; }
+  .cur-toggle .cur-opt{
+    flex:1; text-align:center; padding:10px 6px; border-radius:var(--radius);
+    border:1.5px solid var(--line); cursor:pointer; font-size:14px; font-weight:600; color:var(--ink-soft);
+  }
+  .cur-toggle .cur-opt.sel{ border-color:var(--blueprint); color:var(--blueprint); background:#eaf0f7; }
+
+  .detail-hero{
+    background:var(--ink); color:var(--paper); border-radius:6px; padding:16px 18px;
+    margin-bottom:16px; border-inline-start:5px solid var(--rebar);
+  }
+  .detail-hero h2{ margin:0 0 3px; font-size:19px; }
+  .detail-hero .meta{ font-size:12.5px; color:#c9c8bf; }
+  .hero-cur{ margin-top:14px; padding-top:14px; border-top:1px solid #4a4b45; }
+  .hero-cur-row{ display:flex; justify-content:space-between; align-items:center; padding:6px 0; }
+  .hero-cur-row .code{ font-size:12px; color:#c9c8bf; }
+  .hero-cur-row .figs{ font-size:12px; color:#c9c8bf; }
+  .hero-cur-row .bal{ font-size:19px; font-weight:900; font-family:'Tajawal',sans-serif; }
+
+  .tabs{ display:flex; gap:8px; margin-bottom:12px; }
+  .tab{
+    flex:1; text-align:center; padding:9px 6px; border-radius:20px; font-size:13.5px;
+    border:1.5px solid var(--line); cursor:pointer; font-weight:600; color:var(--ink-soft);
+  }
+  .tab.active.in{ background:var(--ok-bg); border-color:var(--ok); color:var(--ok); }
+  .tab.active.out{ background:var(--bad-bg); border-color:var(--bad); color:var(--bad); }
+
+  .ledger-item{
+    display:flex; justify-content:space-between; align-items:center; gap:10px;
+    padding:11px 4px; border-bottom:1px solid var(--line);
+  }
+  .ledger-item:last-child{ border-bottom:none; }
+  .li-main .li-note{ font-size:14px; }
+  .li-main .li-date{ font-size:11.5px; color:var(--ink-soft); margin-top:2px; }
+  .li-amt{ font-weight:700; font-family:'Tajawal',sans-serif; white-space:nowrap; font-size:15px; }
+  .li-amt.in{ color:var(--ok); } .li-amt.out{ color:var(--bad); }
+  .li-actions{ display:flex; }
+
+  a, button{ -webkit-tap-highlight-color:transparent; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var SITE_ID_PREFIX = "site:";
+  var INDEX_KEY = "sites-index";
+
+  var CURRENCIES = [
+    { code:'SYP', label:'ليرة سورية', symbol:'ل.س' },
+    { code:'USD', label:'دولار أمريكي', symbol:'$' }
+  ];
+
+  var state = {
+    view: "dashboard",
+    currentSiteId: null,
+    entryTab: "in",
+    entryCurrency: "SYP",
+    sitesIndex: [],
+    sitesCache: {},
+    loading: true,
+    error: null
+  };
+
+  var CATS_OUT = ["حديد", "إسمنت", "رمل وبحص", "أدوات ونجارة", "عمالة", "نقل ومواصلات", "أخرى"];
+
+  function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+  function todayISO(){ var d = new Date(); return d.toISOString().slice(0,10); }
+  function fmt(n){
+    n = Number(n)||0;
+    return n.toLocaleString('ar-EG', {maximumFractionDigits:0});
+  }
+  function symbolFor(code){
+    var c = CURRENCIES.filter(function(x){return x.code===code;})[0];
+    return c ? c.symbol : code;
+  }
+  function labelFor(code){
+    var c = CURRENCIES.filter(function(x){return x.code===code;})[0];
+    return c ? c.label : code;
+  }
+  function money(n, code){ return fmt(n) + ' ' + symbolFor(code); }
+  function fmtDate(iso){
+    try{
+      var d = new Date(iso+"T00:00:00");
+      return d.toLocaleDateString('ar-EG', {day:'numeric', month:'short', year:'numeric'});
+    }catch(e){ return iso; }
+  }
+
+  var STORAGE_PREFIX = 'site-ledger:';
+
+  function lsGet(key){
+    try{
+      var raw = localStorage.getItem(STORAGE_PREFIX+key);
+      return raw === null ? null : raw;
+    }catch(e){ return null; }
+  }
+  function lsSet(key, value){
+    try{ localStorage.setItem(STORAGE_PREFIX+key, value); return true; }
+    catch(e){ console.error('storage save failed', e); return false; }
+  }
+  function lsDelete(key){
+    try{ localStorage.removeItem(STORAGE_PREFIX+key); }catch(e){}
+  }
+
+  async function loadIndex(){
+    try{
+      var raw = lsGet(INDEX_KEY);
+      state.sitesIndex = raw ? JSON.parse(raw) : [];
+    }catch(e){ state.sitesIndex = []; }
+  }
+  async function saveIndex(){
+    lsSet(INDEX_KEY, JSON.stringify(state.sitesIndex));
+  }
+  async function loadSite(id){
+    if(state.sitesCache[id]) return state.sitesCache[id];
+    try{
+      var raw = lsGet(SITE_ID_PREFIX+id);
+      var site = raw ? JSON.parse(raw) : null;
+      if(site) state.sitesCache[id] = site;
+      return site;
+    }catch(e){ return null; }
+  }
+  async function saveSite(site){
+    state.sitesCache[site.id] = site;
+    lsSet(SITE_ID_PREFIX+site.id, JSON.stringify(site));
+  }
+  async function deleteSiteStorage(id){
+    delete state.sitesCache[id];
+    lsDelete(SITE_ID_PREFIX+id);
+  }
+
+  async function loadAllSitesFull(){
+    var out = [];
+    for(var i=0;i<state.sitesIndex.length;i++){
+      var s = await loadSite(state.sitesIndex[i].id);
+      if(s) out.push(s);
+    }
+    return out;
+  }
+
+  // totals grouped by currency: {SYP:{inTotal,outTotal,balance}, USD:{...}}
+  function siteTotals(site){
+    var res = {};
+    CURRENCIES.forEach(function(c){ res[c.code] = {inTotal:0, outTotal:0, balance:0}; });
+    (site.payments||[]).forEach(function(p){
+      var cur = p.currency || 'SYP';
+      if(!res[cur]) res[cur] = {inTotal:0, outTotal:0, balance:0};
+      res[cur].inTotal += Number(p.amount||0);
+    });
+    (site.expenses||[]).forEach(function(p){
+      var cur = p.currency || 'SYP';
+      if(!res[cur]) res[cur] = {inTotal:0, outTotal:0, balance:0};
+      res[cur].outTotal += Number(p.amount||0);
+    });
+    Object.keys(res).forEach(function(k){ res[k].balance = res[k].inTotal - res[k].outTotal; });
+    return res;
+  }
+
+  function addTotalsInto(target, src){
+    Object.keys(src).forEach(function(k){
+      if(!target[k]) target[k] = {inTotal:0, outTotal:0, balance:0};
+      target[k].inTotal += src[k].inTotal;
+      target[k].outTotal += src[k].outTotal;
+      target[k].balance += src[k].balance;
+    });
+  }
+
+  function hasActivity(totals, code){
+    return totals[code] && (totals[code].inTotal !== 0 || totals[code].outTotal !== 0);
+  }
+
+  async function render(){
+    var app = document.getElementById('app');
+    if(state.loading){
+      app.innerHTML = '<div style="padding:60px 20px;text-align:center;color:var(--ink-soft)">جارِ التحميل…</div>';
+      return;
+    }
+    if(state.view === "dashboard") app.innerHTML = await renderDashboard();
+    else if(state.view === "new-site") app.innerHTML = renderNewSite();
+    else if(state.view === "site-detail") app.innerHTML = await renderSiteDetail();
+    else if(state.view === "add-entry") app.innerHTML = await renderAddEntry();
+    bindEvents();
+  }
+
+  async function renderDashboard(){
+    var sites = await loadAllSitesFull();
+    var grand = {};
+    CURRENCIES.forEach(function(c){ grand[c.code] = {inTotal:0, outTotal:0, balance:0}; });
+    sites.forEach(function(s){ addTotalsInto(grand, siteTotals(s)); });
+
+    var html = '';
+    html += '<header class="top"><div class="row"><div>';
+    html += '<h1>دفتر الورش</h1><p class="sub">متابعة مقبوضات ومصروفات ورش النجارة والباطون</p>';
+    html += '</div></div></header>';
+    html += '<main>';
+
+    html += '<div class="stats-strip">';
+    html += '<div class="count-row">عدد الورش: <b>'+sites.length+'</b></div>';
+    html += '<div class="cur-table">';
+    html += '<div class="cur-row head"><div>العملة</div><div>مقبوض</div><div>مصروف</div><div>الرصيد</div></div>';
+    CURRENCIES.forEach(function(c){
+      var t = grand[c.code];
+      var balCls = t.balance >= 0 ? 'balance-pos' : 'balance-neg';
+      html += '<div class="cur-row"><div class="cur-code">'+c.symbol+'</div>';
+      html += '<div class="v-in">'+fmt(t.inTotal)+'</div>';
+      html += '<div class="v-out">'+fmt(t.outTotal)+'</div>';
+      html += '<div class="v-bal '+balCls+'">'+fmt(t.balance)+'</div></div>';
+    });
+    html += '</div></div>';
+
+    html += '<div class="section-title"><h2>الورش</h2></div>';
+
+    if(sites.length === 0){
+      html += '<div class="empty">لا يوجد أي ورشة بعد.<br>اضغط "ورشة جديدة" بالأسفل للبدء.</div>';
+    } else {
+      sites.slice().reverse().forEach(function(s){
+        var t = siteTotals(s);
+        var statusClass = 'status-' + (s.status||'جارية');
+        html += '<div class="plate" data-open-site="'+s.id+'">';
+        html += '<span class="rivT1"></span><span class="rivT2"></span><span class="rivB1"></span><span class="rivB2"></span>';
+        html += '<div class="plate-head"><div>';
+        html += '<div class="plate-name">'+escapeHtml(s.name)+'</div>';
+        if(s.client) html += '<div class="plate-client">العميل: '+escapeHtml(s.client)+'</div>';
+        html += '</div><span class="status-chip '+statusClass+'">'+escapeHtml(s.status||'جارية')+'</span></div>';
+        html += '<div class="plate-cur">';
+        var any = false;
+        CURRENCIES.forEach(function(c){
+          if(hasActivity(t, c.code)){
+            any = true;
+            var ct = t[c.code];
+            var balCls = ct.balance >= 0 ? 'balance-pos' : 'balance-neg';
+            html += '<div class="cur-line"><span class="code">'+c.symbol+'</span>';
+            html += '<span class="figs">مقبوض<span style="color:var(--ok)">'+fmt(ct.inTotal)+'</span> · مصروف<span style="color:var(--bad)">'+fmt(ct.outTotal)+'</span> · الرصيد<span class="'+balCls+'">'+fmt(ct.balance)+'</span></span></div>';
+          }
+        });
+        if(!any) html += '<div class="cur-line"><span class="code" style="color:var(--ink-soft)">لا توجد حركة مالية بعد</span></div>';
+        html += '</div></div>';
+      });
+    }
+
+    html += '<div style="height:70px"></div>';
+    html += '</main>';
+    html += '<div class="fab-add"><button class="btn btn-primary btn-block" id="btn-new-site">+ ورشة جديدة</button></div>';
+    return html;
+  }
+
+  function renderNewSite(){
+    var html = '';
+    html += '<header class="top"><div class="row"><button class="backbtn" id="btn-back">رجوع</button>';
+    html += '<div><h1 style="font-size:17px">ورشة جديدة</h1></div></div></header>';
+    html += '<main>';
+    html += '<div class="card">';
+    html += '<div class="field"><label>اسم الورشة / الموقع</label><input id="f-name" placeholder="مثال: عمارة الرياض - حي النرجس" /></div>';
+    html += '<div class="field"><label>اسم العميل (اختياري)</label><input id="f-client" placeholder="اسم صاحب العمل" /></div>';
+    html += '<div class="field"><label>الحالة</label><select id="f-status">';
+    html += '<option value="جارية">جارية</option><option value="متوقفة">متوقفة</option><option value="منتهية">منتهية</option>';
+    html += '</select></div>';
+    html += '<button class="btn btn-primary btn-block" id="btn-save-site">حفظ الورشة</button>';
+    html += '</div>';
+    html += '</main>';
+    return html;
+  }
+
+  async function renderSiteDetail(){
+    var site = await loadSite(state.currentSiteId);
+    if(!site){ state.view="dashboard"; return await renderDashboard(); }
+    var t = siteTotals(site);
+
+    var html = '';
+    html += '<header class="top"><div class="row"><button class="backbtn" id="btn-back">رجوع</button>';
+    html += '<div><h1 style="font-size:17px">'+escapeHtml(site.name)+'</h1></div></div></header>';
+    html += '<main>';
+
+    html += '<div class="detail-hero">';
+    html += '<h2>'+escapeHtml(site.name)+'</h2>';
+    html += '<div class="meta">'+(site.client ? 'العميل: '+escapeHtml(site.client)+' · ' : '')+'الحالة: '+escapeHtml(site.status||'جارية')+'</div>';
+    html += '<div class="hero-cur">';
+    CURRENCIES.forEach(function(c){
+      var ct = t[c.code];
+      var balCls = ct.balance >= 0 ? 'balance-pos' : 'balance-neg';
+      html += '<div class="hero-cur-row"><div><div class="code">'+c.label+' ('+c.symbol+')</div>';
+      html += '<div class="figs">مقبوض '+fmt(ct.inTotal)+' · مصروف '+fmt(ct.outTotal)+'</div></div>';
+      html += '<div class="bal '+balCls+'">'+fmt(ct.balance)+'</div></div>';
+    });
+    html += '</div></div>';
+
+    html += '<div style="display:flex;gap:8px;margin-bottom:16px">';
+    html += '<button class="btn btn-blue" style="flex:1" data-add-entry="in">+ دفعة مستلمة</button>';
+    html += '<button class="btn btn-ghost" style="flex:1;border-color:var(--bad);color:var(--bad)" data-add-entry="out">+ مصروف</button>';
+    html += '</div>';
+
+    html += '<div class="tabs">';
+    html += '<div class="tab '+(state.entryTab==='in'?'active in':'')+'" data-tab="in">المقبوضات ('+(site.payments||[]).length+')</div>';
+    html += '<div class="tab '+(state.entryTab==='out'?'active out':'')+'" data-tab="out">المصروفات ('+(site.expenses||[]).length+')</div>';
+    html += '</div>';
+
+    var list = state.entryTab === 'in' ? (site.payments||[]) : (site.expenses||[]);
+    html += '<div class="card" style="padding:6px 12px">';
+    if(list.length === 0){
+      html += '<div class="empty" style="border:none">لا توجد عناصر بعد.</div>';
+    } else {
+      list.slice().reverse().forEach(function(item){
+        var cur = item.currency || 'SYP';
+        html += '<div class="ledger-item">';
+        html += '<div class="li-main"><div class="li-note">'+escapeHtml(item.note || (item.category||''))+(item.category && state.entryTab==='out' && item.note ? ' · '+escapeHtml(item.category) : '')+'</div>';
+        html += '<div class="li-date">'+fmtDate(item.date)+'</div></div>';
+        html += '<div style="display:flex;align-items:center;gap:10px">';
+        html += '<div class="li-amt '+state.entryTab+'">'+money(item.amount, cur)+'</div>';
+        html += '<button class="li-actions btn-danger-text" data-del-entry="'+item.id+'" data-del-kind="'+state.entryTab+'">حذف</button>';
+        html += '</div></div>';
+      });
+    }
+    html += '</div>';
+
+    html += '<div style="margin-top:18px"><button class="btn btn-ghost btn-block" id="btn-delete-site" style="border-color:var(--bad);color:var(--bad)">حذف الورشة نهائياً</button></div>';
+    html += '<div style="height:20px"></div>';
+    html += '</main>';
+    return html;
+  }
+
+  async function renderAddEntry(){
+    var kind = state.entryTab;
+    var isIn = kind === 'in';
+    var html = '';
+    html += '<header class="top"><div class="row"><button class="backbtn" id="btn-back">رجوع</button>';
+    html += '<div><h1 style="font-size:17px">'+(isIn?'تسجيل دفعة مستلمة':'تسجيل مصروف')+'</h1></div></div></header>';
+    html += '<main>';
+    html += '<div class="card">';
+
+    html += '<div class="field"><label>العملة</label><div class="cur-toggle">';
+    CURRENCIES.forEach(function(c){
+      html += '<div class="cur-opt '+(state.entryCurrency===c.code?'sel':'')+'" data-set-currency="'+c.code+'">'+c.label+'</div>';
+    });
+    html += '</div></div>';
+
+    html += '<div class="row2">';
+    html += '<div class="field"><label>المبلغ ('+symbolFor(state.entryCurrency)+')</label><input id="f-amount" type="number" inputmode="decimal" placeholder="0" /></div>';
+    html += '<div class="field"><label>التاريخ</label><input id="f-date" type="date" value="'+todayISO()+'" /></div>';
+    html += '</div>';
+    if(!isIn){
+      html += '<div class="field"><label>نوع المصروف</label><select id="f-cat">';
+      CATS_OUT.forEach(function(c){ html += '<option value="'+c+'">'+c+'</option>'; });
+      html += '</select></div>';
+    }
+    html += '<div class="field"><label>ملاحظة (اختياري)</label><input id="f-note" placeholder="'+(isIn?'مثال: دفعة أولى / دفعة مرحلة السقف':'مثال: فاتورة حديد من المصنع')+'" /></div>';
+    html += '<button class="btn '+(isIn?'btn-blue':'btn-primary')+' btn-block" id="btn-save-entry">حفظ</button>';
+    html += '</div>';
+    html += '</main>';
+    return html;
+  }
+
+  function escapeHtml(s){
+    return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function bindEvents(){
+    var backBtn = document.getElementById('btn-back');
+    if(backBtn) backBtn.onclick = function(){
+      if(state.view === 'add-entry'){ state.view = 'site-detail'; }
+      else { state.view = 'dashboard'; state.currentSiteId=null; }
+      render();
+    };
+
+    var newSiteBtn = document.getElementById('btn-new-site');
+    if(newSiteBtn) newSiteBtn.onclick = function(){ state.view='new-site'; render(); };
+
+    var saveSiteBtn = document.getElementById('btn-save-site');
+    if(saveSiteBtn) saveSiteBtn.onclick = async function(){
+      var name = document.getElementById('f-name').value.trim();
+      if(!name){ alert('من فضلك اكتب اسم الورشة'); return; }
+      var client = document.getElementById('f-client').value.trim();
+      var status = document.getElementById('f-status').value;
+      var site = { id: uid(), name:name, client:client, status:status, payments:[], expenses:[], createdAt: todayISO() };
+      saveSiteBtn.disabled = true; saveSiteBtn.textContent = 'جارِ الحفظ…';
+      await saveSite(site);
+      state.sitesIndex.push({id:site.id, name:site.name});
+      await saveIndex();
+      state.currentSiteId = site.id;
+      state.entryTab = 'in';
+      state.view = 'site-detail';
+      render();
+    };
+
+    document.querySelectorAll('[data-open-site]').forEach(function(el){
+      el.onclick = function(){
+        state.currentSiteId = el.getAttribute('data-open-site');
+        state.entryTab = 'in';
+        state.view = 'site-detail';
+        render();
+      };
+    });
+
+    document.querySelectorAll('[data-tab]').forEach(function(el){
+      el.onclick = function(){ state.entryTab = el.getAttribute('data-tab'); render(); };
+    });
+
+    document.querySelectorAll('[data-add-entry]').forEach(function(el){
+      el.onclick = function(){
+        state.entryTab = el.getAttribute('data-add-entry');
+        state.entryCurrency = 'SYP';
+        state.view='add-entry';
+        render();
+      };
+    });
+
+    document.querySelectorAll('[data-set-currency]').forEach(function(el){
+      el.onclick = function(){ state.entryCurrency = el.getAttribute('data-set-currency'); render(); };
+    });
+
+    var saveEntryBtn = document.getElementById('btn-save-entry');
+    if(saveEntryBtn) saveEntryBtn.onclick = async function(){
+      var amount = parseFloat(document.getElementById('f-amount').value);
+      if(!amount || amount<=0){ alert('من فضلك اكتب مبلغاً صحيحاً'); return; }
+      var date = document.getElementById('f-date').value || todayISO();
+      var note = document.getElementById('f-note').value.trim();
+      var currency = state.entryCurrency || 'SYP';
+      var site = await loadSite(state.currentSiteId);
+      if(!site) return;
+      var entry = { id: uid(), amount: amount, date: date, note: note, currency: currency };
+      if(state.entryTab === 'in'){
+        site.payments = site.payments || [];
+        site.payments.push(entry);
+      } else {
+        entry.category = document.getElementById('f-cat').value;
+        site.expenses = site.expenses || [];
+        site.expenses.push(entry);
+      }
+      saveEntryBtn.disabled = true; saveEntryBtn.textContent = 'جارِ الحفظ…';
+      await saveSite(site);
+      state.view = 'site-detail';
+      render();
+    };
+
+    document.querySelectorAll('[data-del-entry]').forEach(function(el){
+      el.onclick = async function(){
+        if(!confirm('تأكيد حذف هذا العنصر؟')) return;
+        var id = el.getAttribute('data-del-entry');
+        var kind = el.getAttribute('data-del-kind');
+        var site = await loadSite(state.currentSiteId);
+        if(!site) return;
+        var key = kind === 'in' ? 'payments' : 'expenses';
+        site[key] = (site[key]||[]).filter(function(it){ return it.id !== id; });
+        await saveSite(site);
+        render();
+      };
+    });
+
+    var delSiteBtn = document.getElementById('btn-delete-site');
+    if(delSiteBtn) delSiteBtn.onclick = async function(){
+      if(!confirm('سيتم حذف الورشة وكل بياناتها نهائياً. متأكد؟')) return;
+      var id = state.currentSiteId;
+      await deleteSiteStorage(id);
+      state.sitesIndex = state.sitesIndex.filter(function(s){ return s.id !== id; });
+      await saveIndex();
+      state.currentSiteId = null;
+      state.view = 'dashboard';
+      render();
+    };
+  }
+
+  async function boot(){
+    try{
+      await loadIndex();
+    }catch(e){
+      state.error = 'تعذر تحميل البيانات المحفوظة';
+    }
+    state.loading = false;
+    render();
+  }
+
+  boot();
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('service-worker.js').catch(function(err){
+        console.error('service worker registration failed', err);
+      });
+    });
+  }
+})();
+</script>
+</body>
+</html>
